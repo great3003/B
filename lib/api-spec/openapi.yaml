@@ -1,0 +1,511 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Cantex Swap Bot API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: accounts
+    description: Account management
+  - name: swap
+    description: Swap operations
+  - name: gas
+    description: Gas fee tracking
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /accounts:
+    get:
+      operationId: listAccounts
+      tags: [accounts]
+      summary: List all accounts
+      responses:
+        "200":
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Account"
+    post:
+      operationId: createAccount
+      tags: [accounts]
+      summary: Add a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountBody"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{id}:
+    delete:
+      operationId: deleteAccount
+      tags: [accounts]
+      summary: Remove an account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Account deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{id}/balances:
+    get:
+      operationId: getAccountBalances
+      tags: [accounts]
+      summary: Get token balances for an account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Account balances
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountBalances"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{id}/swap:
+    post:
+      operationId: executeSwap
+      tags: [swap]
+      summary: Execute a swap for a specific account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwapRequest"
+      responses:
+        "200":
+          description: Swap result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapResult"
+        "400":
+          description: Swap failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{id}/swap-quote:
+    post:
+      operationId: getSwapQuote
+      tags: [swap]
+      summary: Get swap quote for a specific account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwapQuoteRequest"
+      responses:
+        "200":
+          description: Swap quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapQuoteResult"
+        "400":
+          description: Quote failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{id}/settings:
+    patch:
+      operationId: updateAccountSettings
+      tags: [accounts]
+      summary: Update auto-swap settings for an account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountSettingsBody"
+      responses:
+        "200":
+          description: Updated account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /gas:
+    get:
+      operationId: getGasFee
+      tags: [gas]
+      summary: Get current gas fee estimate
+      responses:
+        "200":
+          description: Gas fee info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GasFeeInfo"
+
+  /swap-history:
+    get:
+      operationId: listSwapHistory
+      tags: [swap]
+      summary: Get swap history across all accounts
+      responses:
+        "200":
+          description: Swap history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SwapHistoryEntry"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        operatorKey:
+          type: string
+        tradingKey:
+          type: string
+        isActive:
+          type: boolean
+        autoSwapEnabled:
+          type: boolean
+        gasThreshold:
+          type: ["number", "null"]
+        defaultSwapDirection:
+          type: string
+        defaultSwapAmount:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - operatorKey
+        - tradingKey
+        - isActive
+        - autoSwapEnabled
+        - gasThreshold
+        - defaultSwapDirection
+        - defaultSwapAmount
+        - createdAt
+
+    CreateAccountBody:
+      type: object
+      properties:
+        name:
+          type: string
+        operatorKey:
+          type: string
+        tradingKey:
+          type: string
+      required:
+        - name
+        - operatorKey
+        - tradingKey
+
+    UpdateAccountSettingsBody:
+      type: object
+      properties:
+        name:
+          type: string
+        isActive:
+          type: boolean
+        autoSwapEnabled:
+          type: boolean
+        gasThreshold:
+          type: ["number", "null"]
+        defaultSwapDirection:
+          type: string
+        defaultSwapAmount:
+          type: ["string", "null"]
+
+    TokenBalance:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        unlockedAmount:
+          type: string
+        lockedAmount:
+          type: string
+        instrumentId:
+          type: string
+        instrumentAdmin:
+          type: string
+      required:
+        - symbol
+        - name
+        - unlockedAmount
+        - lockedAmount
+        - instrumentId
+        - instrumentAdmin
+
+    AccountBalances:
+      type: object
+      properties:
+        accountId:
+          type: integer
+        address:
+          type: string
+        tokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/TokenBalance"
+        fetchedAt:
+          type: string
+      required:
+        - accountId
+        - address
+        - tokens
+        - fetchedAt
+
+    SwapRequest:
+      type: object
+      properties:
+        direction:
+          type: string
+          description: "cbtc_to_usdcx or usdcx_to_cbtc"
+        amount:
+          type: string
+          description: Amount to swap as decimal string
+      required:
+        - direction
+        - amount
+
+    SwapResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        inputAmount:
+          type: string
+        inputSymbol:
+          type: string
+        outputAmount:
+          type: string
+        outputSymbol:
+          type: string
+        price:
+          type: ["string", "null"]
+        txId:
+          type: ["string", "null"]
+        message:
+          type: string
+        executedAt:
+          type: string
+      required:
+        - success
+        - inputAmount
+        - inputSymbol
+        - outputAmount
+        - outputSymbol
+        - price
+        - txId
+        - message
+        - executedAt
+
+    SwapQuoteRequest:
+      type: object
+      properties:
+        direction:
+          type: string
+        amount:
+          type: string
+      required:
+        - direction
+        - amount
+
+    SwapQuoteResult:
+      type: object
+      properties:
+        sellAmount:
+          type: string
+        sellSymbol:
+          type: string
+        buyAmount:
+          type: string
+        buySymbol:
+          type: string
+        tradePrice:
+          type: string
+        slippage:
+          type: string
+        feePercentage:
+          type: string
+        estimatedSeconds:
+          type: string
+        networkFee:
+          type: string
+      required:
+        - sellAmount
+        - sellSymbol
+        - buyAmount
+        - buySymbol
+        - tradePrice
+        - slippage
+        - feePercentage
+        - estimatedSeconds
+        - networkFee
+
+    GasFeeInfo:
+      type: object
+      properties:
+        networkFee:
+          type: string
+        feePercentage:
+          type: string
+        updatedAt:
+          type: string
+        status:
+          type: string
+      required:
+        - networkFee
+        - feePercentage
+        - updatedAt
+        - status
+
+    SwapHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        accountId:
+          type: integer
+        accountName:
+          type: string
+        direction:
+          type: string
+        inputAmount:
+          type: string
+        inputSymbol:
+          type: string
+        outputAmount:
+          type: string
+        outputSymbol:
+          type: string
+        price:
+          type: ["string", "null"]
+        status:
+          type: string
+        executedAt:
+          type: string
+      required:
+        - id
+        - accountId
+        - accountName
+        - direction
+        - inputAmount
+        - inputSymbol
+        - outputAmount
+        - outputSymbol
+        - price
+        - status
+        - executedAt

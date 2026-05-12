@@ -1,0 +1,1 @@
+{"version":3,"file":"tokenBalance.d.ts","sourceRoot":"","sources":["../../../src/generated/types/tokenBalance.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,MAAM,WAAW,YAAY;IAC3B,MAAM,EAAE,MAAM,CAAC;IACf,IAAI,EAAE,MAAM,CAAC;IACb,cAAc,EAAE,MAAM,CAAC;IACvB,YAAY,EAAE,MAAM,CAAC;IACrB,YAAY,EAAE,MAAM,CAAC;IACrB,eAAe,EAAE,MAAM,CAAC;CACzB"}
